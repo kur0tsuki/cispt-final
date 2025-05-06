@@ -5,7 +5,6 @@ import { useAppContext } from "../../context/AppContext";
 const LowStockAlert = () => {
   const { ingredients, loading } = useAppContext();
 
-  // Check for ingredients below minimum threshold
   const lowStockItems = ingredients.filter(
     (item) => item.quantity <= item.min_threshold
   );

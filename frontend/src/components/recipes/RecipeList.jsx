@@ -18,7 +18,6 @@ const RecipeList = () => {
     }
 
     try {
-      // Use parseFloat instead of parseInt to allow decimal values
       await prepareRecipe(id, parseFloat(quantity), notes);
       setPreparing(null);
       setQuantity("");
@@ -54,7 +53,7 @@ const RecipeList = () => {
                     <div className="flex items-center">
                       <input
                         type="number"
-                        step="0.01" // Allow decimal inputs
+                        step="0.01"
                         value={quantity}
                         onChange={(e) => setQuantity(e.target.value)}
                         className="mr-2 w-20 border rounded p-1"

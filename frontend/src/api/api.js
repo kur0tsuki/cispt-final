@@ -24,7 +24,7 @@ export const updateRecipe = (id, data) => API.put(`/recipes/${id}/`, data);
 export const deleteRecipe = (id) => API.delete(`/recipes/${id}/`);
 export const prepareRecipe = (id, quantity, notes) =>
   API.post(`/recipes/${id}/prepare/`, {
-    quantity: parseFloat(quantity), // Explicitly convert to float
+    quantity: parseFloat(quantity),
     notes,
   });
 

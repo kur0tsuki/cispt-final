@@ -41,7 +41,7 @@ export const AppProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       await Promise.all([fetchIngredients(), fetchRecipes(), fetchProducts()]);
-      setLoaded(true); // All data fetched successfully
+      setLoaded(true);
     } catch (err) {
       setError("Failed to fetch app data");
       console.error(err);
@@ -60,7 +60,7 @@ export const AppProvider = ({ children }) => {
     recipes,
     products,
     loading,
-    loaded, // pass to consumers
+    loaded,
     error,
     refreshData,
   };

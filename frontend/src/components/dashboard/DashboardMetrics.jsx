@@ -16,7 +16,6 @@ const DashboardMetrics = ({ dashboardData }) => {
 
   const { today = {}, week = {} } = dashboardData;
 
-  // Provide default values to prevent NaN
   const defaultMetrics = {
     revenue: 0,
     profit: 0,

@@ -55,16 +55,13 @@ class Recipe(models.Model):
             if requirement.quantity <= 0:
                 continue
                 
-            # Calculate portions more precisely
             available_portions = requirement.ingredient.quantity / requirement.quantity
-            # Prevent negative portions 
             if available_portions > 0:
                 portions.append(available_portions)
         
         if not portions:
             return 0.0
         
-        # Return the minimum number of portions possible as a float, minimum 0
         return max(0.0, min(portions))
     
     @property
@@ -88,16 +85,15 @@ class RecipeIngredient(models.Model):
         return f"{self.recipe}: {self.quantity} {self.ingredient.unit} of {self.ingredient.name}"
     
     def save(self, *args, **kwargs):
-        if not self.id:  # Only update on creation
+        if not self.id: 
             self.recipe.prepared_quantity += self.quantity
             self.recipe.save()
         super().save(*args, **kwargs)
 
 
 class ProductionRecord(models.Model):
-    """Track recipe production history"""
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
-    quantity = models.FloatField(default=1)  # Changed from IntegerField to FloatField
+    quantity = models.FloatField(default=1)
     timestamp = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True)
     
@@ -116,7 +112,6 @@ class ProductionRecord(models.Model):
         super().save(*args, **kwargs)
     
 class Product(models.Model):
-    """Sellable products based on recipes"""
     recipe = models.ForeignKey('Recipe', on_delete=models.CASCADE)
     name = models.CharField(max_length=100, help_text="Product/menu item name (can differ from recipe name)")
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -171,7 +166,7 @@ class Sale(models.Model):
         return float(unit_profit * self.quantity)
     
     def save(self, *args, **kwargs):
-        if not self.id:  # Only for new sales
+        if not self.id:
             recipe = self.product.recipe
             print(f"Sale: Current prepared quantity for {recipe.name}: {recipe.prepared_quantity}")
 
@@ -180,16 +175,13 @@ class Sale(models.Model):
                     'quantity': f'Cannot sell {self.quantity} {self.product.name}(s). Only {recipe.prepared_quantity} prepared.'
                 })
 
-            # Deduct from prepared quantity
             recipe.prepared_quantity -= self.quantity
             recipe.save()
             print(f"Sale: After deduction, prepared quantity for {recipe.name}: {recipe.prepared_quantity}")
 
-            # Set default unit price if not provided
             if not self.unit_price:
                 self.unit_price = self.product.price
 
-            # Note: Removed ProductionRecord creation as it was incorrectly adding back to prepared_quantity
 
             super().save(*args, **kwargs)
         else:

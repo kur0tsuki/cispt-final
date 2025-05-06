@@ -28,7 +28,6 @@ const RecipeForm = () => {
     try {
       setLoading(true);
       const { data } = await getRecipe(id);
-      // Transform the ingredients_detail into recipe_ingredients format
       const formattedData = {
         ...data,
         recipe_ingredients:
@@ -85,7 +84,6 @@ const RecipeForm = () => {
     try {
       setLoading(true);
 
-      // Format the data properly
       const dataToSubmit = {
         ...formData,
         preparation_time: parseInt(formData.preparation_time, 10),

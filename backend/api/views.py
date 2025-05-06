@@ -42,7 +42,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def prepare(self, request, pk=None):
         recipe = self.get_object()
         
-        # Parse quantity as float to support decimal values
         try:
             quantity = float(request.data.get('quantity', 1))
         except (ValueError, TypeError):
@@ -59,7 +58,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Get max_portions before making changes
         max_possible = recipe.max_portions
         
         if quantity > max_possible:
@@ -68,9 +66,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Process the recipe production
         with transaction.atomic():
-            # Update ingredient quantities
             for requirement in recipe.recipeingredient_set.all():
                 total_needed = requirement.quantity * quantity
                 ingredient = requirement.ingredient
@@ -78,10 +74,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 ingredient.save()
                 
             
-            # Create production record
             production = ProductionRecord.objects.create(
                 recipe=recipe,
-                quantity=quantity,  # This should be a FloatField now
+                quantity=quantity,
                 notes=notes
             )
             recipe.prepared_quantity += quantity
@@ -95,38 +90,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 class RecipeIngredientViewSet(viewsets.ModelViewSet):
     queryset = RecipeIngredient.objects.all()
     serializer_class = RecipeIngredientSerializer
-
-
-class ProductionRecordViewSet(viewsets.ModelViewSet):
-    queryset = ProductionRecord.objects.all()
-    serializer_class = ProductionRecordSerializer
-    
-    @action(detail=False, methods=['get'])
-    def summary(self, request):
-        """Get production statistics"""
-        from django.db.models import Sum, Count
-        
-        # Most produced recipes
-        top_recipes = ProductionRecord.objects.values('recipe__name')\
-            .annotate(total=Sum('quantity'))\
-            .order_by('-total')[:5]
-            
-        # Production over time (last 30 days)
-        from datetime import datetime, timedelta
-        thirty_days_ago = datetime.now() - timedelta(days=30)
-        
-        daily_production = ProductionRecord.objects\
-            .filter(timestamp__gte=thirty_days_ago)\
-            .extra({'date': "date(timestamp)"})\
-            .values('date')\
-            .annotate(count=Count('id'), total_quantity=Sum('quantity'))\
-            .order_by('date')
-            
-        return Response({
-            'top_recipes': top_recipes,
-            'daily_production': daily_production
-        })
-    
+   
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
@@ -145,24 +109,20 @@ class SaleViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def report(self, request):
         """Generate sales and profit report by time period"""
-        # Get date range parameters
         try:
             start_date_str = request.query_params.get('start_date')
             end_date_str = request.query_params.get('end_date')
-            period = request.query_params.get('period', 'day')  # Changed from 'daily'
+            period = request.query_params.get('period', 'day') 
 
-            # Parse dates
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
             
-            # Base queryset for the date range
             queryset = Sale.objects.filter(
                 timestamp__date__gte=start_date,
                 timestamp__date__lte=end_date
             )
             
-            # Apply time period truncation
-            if period == 'day':  # Changed from 'daily'
+            if period == 'day':
                 trunc_function = TruncDate('timestamp')
                 date_format = '%Y-%m-%d'
             elif period == 'week':
@@ -177,7 +137,6 @@ class SaleViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Group sales by period
             sales_by_period = queryset.annotate(
                 period=trunc_function
             ).values('period').annotate(
@@ -186,10 +145,8 @@ class SaleViewSet(viewsets.ModelViewSet):
                 items_sold=Sum('quantity')
             ).order_by('period')
 
-            # Format results
             result = []
             for period_data in sales_by_period:
-                # Calculate cost and profit for this period
                 period_sales = queryset.filter(timestamp__date=period_data['period'])
                 cost = sum(sale.quantity * float(sale.product.recipe.cost) for sale in period_sales)
                 revenue = float(period_data['total_sales'] or 0)
@@ -220,24 +177,20 @@ class SaleViewSet(viewsets.ModelViewSet):
             )
 
 
-# Helper endpoint for dashboard
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
         try:
             today = timezone.now().date()
             week_ago = today - timedelta(days=7)
 
-            # Base queryset
             sales = self.queryset
 
-            # Today's metrics
             today_sales = sales.filter(timestamp__date=today)
             today_revenue = today_sales.aggregate(
                 revenue=Sum(F('quantity') * F('unit_price')),
                 transactions=Count('id')
             )
 
-            # Calculate today's cost and profit
             today_cost = sum(
                 sale.quantity * float(sale.product.recipe.cost)
                 for sale in today_sales
@@ -246,14 +199,12 @@ class SaleViewSet(viewsets.ModelViewSet):
             today_profit = today_revenue_val - today_cost
             today_margin = (today_profit / today_revenue_val * 100) if today_revenue_val > 0 else 0
 
-            # Weekly metrics
             week_sales = sales.filter(timestamp__date__gte=week_ago)
             week_revenue = week_sales.aggregate(
                 revenue=Sum(F('quantity') * F('unit_price')),
                 transactions=Count('id')
             )
 
-            # Calculate weekly cost and profit
             week_cost = sum(
                 sale.quantity * float(sale.product.recipe.cost)
                 for sale in week_sales
@@ -274,7 +225,6 @@ class SaleViewSet(viewsets.ModelViewSet):
                 .order_by('period')
             )
 
-            # Calculate profit for each period
             for day in chart_data:
                 day_sales = Sale.objects.filter(timestamp__date=day['period'])
                 cost = sum(
@@ -300,7 +250,7 @@ class SaleViewSet(viewsets.ModelViewSet):
             })
 
         except Exception as e:
-            print(f"Dashboard error: {str(e)}")  # Debug log
+            print(f"Dashboard error: {str(e)}")
             return Response(
                 {'error': 'Error generating dashboard metrics'},
                 status=500

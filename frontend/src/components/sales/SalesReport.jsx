@@ -35,7 +35,7 @@ const SalesReport = () => {
 
       const { data } = await getSaleReport(period, startDate, endDate);
       console.log("Report data:", data);
-      setReportData(data.data || []); // Access the data array from the response
+      setReportData(data.data || []);
     } catch (err) {
       console.error("Error details:", err.response?.data || err.message);
       setError(err.response?.data?.error || "Failed to fetch sales report");
@@ -47,13 +47,11 @@ const SalesReport = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validate dates
     if (!startDate || !endDate) {
       setError("Please select both start and end dates");
       return;
     }
 
-    // Validate date range
     if (new Date(startDate) > new Date(endDate)) {
       setError("Start date must be before end date");
       return;

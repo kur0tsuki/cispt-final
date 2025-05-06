@@ -26,7 +26,6 @@ const ProductForm = () => {
     }
   }, [id]);
 
-  // Update useEffect for recipe selection
   useEffect(() => {
     if (formData.recipe && recipes.length > 0) {
       const recipe = recipes.find((r) => r.id === parseInt(formData.recipe));
@@ -86,7 +85,6 @@ const ProductForm = () => {
 
   if (loading && id) return <LoadingSpinner />;
 
-  // Add calculations for pricing analysis
   const calculatePricingDetails = () => {
     const price = parseFloat(formData.price) || 0;
     const cost = selectedRecipe?.cost_per_serving || 0;

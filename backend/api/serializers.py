@@ -29,7 +29,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = [
             'id', 'name', 'instructions', 'preparation_time', 'image',
-            'ingredients_detail', 'recipe_ingredients',  # <== recipe_ingredients now writable
+            'ingredients_detail', 'recipe_ingredients',
             'can_make', 'max_portions', 'cost','prepared_quantity','cost_per_serving',
         ]
 
@@ -54,7 +54,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         instance.save()
 
         if ingredients_data is not None:
-            # Clear and recreate the ingredients
             instance.recipeingredient_set.all().delete()
             for item in ingredients_data:
                 RecipeIngredient.objects.create(
@@ -87,9 +86,8 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        # Add prepared_quantity directly to the product
         data['prepared_quantity'] = instance.recipe.prepared_quantity if instance.recipe else 0
-        print(f"Serializing {instance.name}:", data)  # Debug log
+        print(f"Serializing {instance.name}:", data)
         return data
     
     class Meta:
@@ -111,7 +109,6 @@ class SaleSerializer(serializers.ModelSerializer):
         read_only_fields = ['product_name', 'total_price', 'profit', 'timestamp']
 
     def create(self, validated_data):
-        # Ensure product exists before creating sale
         product = validated_data.get('product')
         if not product:
             raise serializers.ValidationError({"product": "Product is required"})

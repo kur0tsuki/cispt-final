@@ -64,7 +64,7 @@ const PointOfSale = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       refreshData();
-    }, 30000); // Refresh every 30 seconds
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [refreshData]);
@@ -113,11 +113,10 @@ const PointOfSale = () => {
     setMessage({ type: "", text: "" });
 
     try {
-      // Create all sales in parallel using Promise.all
       await Promise.all(
         cart.map((item) =>
           createSale({
-            product: item.product.id, // Ensure product ID is being sent
+            product: item.product.id,
             quantity: parseInt(item.quantity),
             unit_price: parseFloat(item.unit_price),
           })
@@ -129,7 +128,7 @@ const PointOfSale = () => {
         text: "Sale completed successfully!",
       });
       setCart([]);
-      await refreshData(); // Refresh data after successful checkout
+      await refreshData();
     } catch (err) {
       console.error("Checkout error:", err.response?.data || err);
       setMessage({
@@ -163,7 +162,7 @@ const PointOfSale = () => {
               .map((product) => {
                 console.log("Processing product:", {
                   name: product.name,
-                  prepared_quantity: product.prepared_quantity, // Changed from product?.recipe?.prepared_quantity
+                  prepared_quantity: product.prepared_quantity,
                   price: product.price,
                 });
 
